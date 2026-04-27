@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<link rel="manifest" href="manifest.json">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>24 TETET</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #0a0f1c;
+  color: white;
+  text-align: center;
+}
+
+.container {
+  max-width: 420px;
+  width: 100%;
+  margin: auto;
+  padding: 16px;
+  position: relative;
+}
+
+h1 {
+  font-weight: 500;
+  letter-spacing: 2px;
+  color: #4da3ff;
+  text-shadow:
+    0 0 6px rgba(77,163,255,0.6),
+    0 0 20px rgba(77,163,255,0.3);
+}
+
+#settingsBtn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+#settingsPanel {
+  position: absolute;
+  top: 45px;
+  right: 10px;
+  background: #141a2b;
+  padding: 15px;
+  border-radius: 10px;
+  display: none;
+  width: 180px;
+  text-align: left;
+}
+
+input[type=range] {
+  accent-color: #4da3ff;
+  width: 100%;
+}
+
+/* toggle */
+.switch {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  display: inline-block;
+  margin-left: 10px;
+}
+
+.switch input { display: none; }
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  background-color: #2a3558;
+  border-radius: 20px;
+  top: 0; left: 0; right: 0; bottom: 0;
+  transition: 0.3s;
+}
+
+.slider:before {
+  content: "";
+  position: absolute;
+  height: 16px; width: 16px;
+  left: 3px; bottom: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+input:checked + .slider { background-color: #4da3ff; }
+input:checked + .slider:before { transform: translateX(18px); }
+
+/* controls */
+.controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 28px;
+  margin: 25px 0;
+}
+
+.icon {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;   /* vertical center */
+  justify-content: center; /* horizontal center */
+  cursor: pointer;
+}
+.icon svg {
+  width: 30px;
+  height: 30px;
+  display: block;
+}
+.icon-melody svg {
+  width: 24px;
+  height: 24px;
+}
+
+.icon-delete svg {
+  width: 24px;
+  height: 24px;
+}
+
+.icon span { filter: brightness(0) invert(1); }
+
+/* boxes */
+#boxes {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.box {
+  width: 45px;
+  height: 45px;
+  border-radius: 8px;
+  background: #1a2238;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* grid */
+#grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.note {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #1c2642;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+box-sizing: border-box;
+}
+
+.alt { background: #162a4d; }
+
+.correct { background:#2ecc71 !important; color:black; }
+.wrong { background:#e74c3c !important; }
+
+#status {
+  margin-top: 10px;
+  min-height: 20px;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<div id="settingsBtn" onclick="toggleSettings()">⚙</div>
+
+<div id="settingsPanel">
+Drone Volume<br>
+<input type="range" min="0" max="0.3" step="0.01" value="0.15" id="droneVol"><br><br>
+
+Melody Volume<br> <input type="range" min="0" max="0.5" step="0.01" value="0.3" id="melodyVol"><br><br>
+
+Tones<br> <input type="range" min="1" max="10" value="3" id="len"><br> <span id="lenVal">3</span><br><br>
+
+Auto Skip <label class="switch"> <input type="checkbox" id="autoSkip"> <span class="slider"></span> </label>
+
+</div>
+
+<h1>24 TETET</h1>
+
+<div class="controls">
+
+<div class="icon"
+  onmousedown="startHold()"
+  onmouseup="endHold()"
+  ontouchstart="startHold()"
+  ontouchend="endHold()">
+  <span><svg viewBox="0 0 24 24" width="30" height="30" fill="white">
+  <path d="M3 9v6h4l5 4V5L7 9H3z"/>
+</svg></span>
+</div>
+
+<div class="icon icon-melody" onclick="newMelody()"><svg viewBox="0 0 24 24" width="10" height="10" fill="white">
+  <path d="M12 3v12.55A4 4 0 1 0 14 19V7h6V3h-8z"/>
+</svg></div>
+<div class="icon" onclick="replay()"><svg viewBox="0 0 24 24">
+  <path d="M12 5V2L8 6l4 4V7c2.8 0 5 2.2 5 5s-2.2 5-5 5-5-2.2-5-5H5a7 7 0 1 0 7-7z" fill="white"/>
+</svg></div>
+<div class="icon" onclick="reveal()"><svg viewBox="0 0 24 24" width="30" height="30" fill="white">
+  <path d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"/>
+</svg></div>
+
+<div class="icon" onclick="toggleInstrument()">
+<svg viewBox="0 0 24 24" width="26" height="26">
+  <rect x="3" y="6" width="18" height="12" rx="2" fill="white"/>
+  <rect x="7" y="6" width="2" height="7" fill="#0a0f1c"/>
+  <rect x="11" y="6" width="2" height="7" fill="#0a0f1c"/>
+  <rect x="15" y="6" width="2" height="7" fill="#0a0f1c"/>
+</svg>
+</div>
+
+<div class="icon icon-delete" onclick="backspace()"><svg viewBox="0 0 24 24" width="30" height="30" fill="white">
+  <path d="M22 3H7L2 12l5 9h15V3zM17 16l-2-2-2 2-1.5-1.5 2-2-2-2L13 9l2 2 2-2L18.5 10l-2 2 2 2L17 16z"/>
+</svg></div>
+</div>
+
+<div id="boxes"></div>
+<div id="status"></div>
+<div id="grid"></div>
+
+</div>
+
+<script>
+let activeNotes = Array(24).fill(true);
+document.body.addEventListener("click", () => {
+  audioCtx.resume();
+}, { once: true });
+let instrumentMode = false;
+let selectingKey = false;
+let holdTimer = null;
+let currentKey = 0;
+
+function setStatus(text){
+  document.getElementById("status").innerText = text;
+}
+
+function toggleInstrument(){
+  instrumentMode = !instrumentMode;
+  setStatus(instrumentMode ? "Instrument Mode" : "");
+}
+
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+const master = audioCtx.createGain();
+master.connect(audioCtx.destination);
+
+let droneOsc, droneGain;
+let droneOn=false;
+
+let melody=[], user=[];
+
+const baseFreq=261.63;
+
+function getDroneFreq(){
+  return baseFreq * Math.pow(2, currentKey/24) / 2;
+}
+
+const labels=[
+"1","1+","b2","2-","2","2+","b3","3-","3","3+","4","4+",
+"b5","5-","5","5+","b6","6-","6","6+","b7","7-","7","7+"
+];
+const noteNames=[
+"C","C+","Db","D-","D","D+","Eb","E-","E","E+","F","F+",
+"Gb","G-","G","G+","Ab","A-","A","A+","Bb","B-","B","B+"
+];
+
+function freq(n){
+  return baseFreq*Math.pow(2,(n+currentKey)/24);
+}
+async function play(f){
+  await audioCtx.resume();
+  let vol=parseFloat(document.getElementById("melodyVol").value);
+
+  const o=audioCtx.createOscillator();
+  const g=audioCtx.createGain();
+  const t=audioCtx.currentTime;
+
+  g.gain.setValueAtTime(0,t);
+  g.gain.linearRampToValueAtTime(vol,t+0.02);
+  g.gain.linearRampToValueAtTime(0,t+0.6);
+
+  o.frequency.value=f;
+  o.connect(g);
+  g.connect(master);
+
+  o.start(t);
+  o.stop(t+0.62);
+}
+
+async function toggleDrone(){
+  await audioCtx.resume();
+
+  if(!droneOsc){
+    droneOsc=audioCtx.createOscillator();
+    droneGain=audioCtx.createGain();
+    droneOsc.type="triangle";
+    droneGain.gain.value=0;
+    droneOsc.connect(droneGain);
+    droneGain.connect(master);
+    droneOsc.start();
+  }
+
+  droneOsc.frequency.setValueAtTime(getDroneFreq(), audioCtx.currentTime);
+
+  let target=parseFloat(document.getElementById("droneVol").value);
+  let t=audioCtx.currentTime;
+
+  droneGain.gain.cancelScheduledValues(t);
+  droneGain.gain.setValueAtTime(droneGain.gain.value,t);
+  droneGain.gain.linearRampToValueAtTime(droneOn?0:target,t+0.3);
+
+  droneOn=!droneOn;
+}
+
+let droneHoldTimer;
+let longPressTriggered = false;
+
+function startHold(){
+  longPressTriggered = false;
+
+  droneHoldTimer = setTimeout(()=>{
+    selectingKey = true;
+    longPressTriggered = true;
+    enterKeyMode();
+  }, 500);
+}
+
+function endHold(){
+  clearTimeout(droneHoldTimer);
+
+  if(!longPressTriggered){
+    toggleDrone();
+  }
+}
+
+function enterKeyMode(){
+  document.querySelectorAll(".note").forEach((n,i)=>{
+    n.style.background="#000";
+    n.style.border="2px solid white";
+    n.style.boxShadow="0 0 10px rgba(255,255,255,0.8)";
+    n.innerText = noteNames[i]; // ✅ added
+  });
+}
+
+function exitKeyMode(){
+  document.querySelectorAll(".note").forEach((n,i)=>{
+    n.style.background = i%2 ? "#162a4d" : "#1c2642";
+    n.style.border="none";
+    n.style.boxShadow="none";
+    n.innerText = labels[i]; // ✅ restore labels
+  });
+}
+
+document.getElementById("droneVol").oninput=function(){
+  if(droneOn && droneGain){
+    let t=audioCtx.currentTime;
+    droneGain.gain.setTargetAtTime(parseFloat(this.value),t,0.1);
+  }
+};
+
+function newMelody(){
+  melody=[]; user=[];
+  document.getElementById("status").innerText="";
+
+  let len=parseInt(document.getElementById("len").value);
+
+  for(let i=0;i<len;i++){
+    let available = [];
+
+for(let i=0;i<24;i++){
+  if(activeNotes[i]) available.push(i);
+}
+
+// 🛑 hvis ingen toner valgt
+if(available.length === 0){
+  alert("Select at least one tone");
+  return;
+}
+
+// vælg kun fra aktive toner
+let randomNote = available[Math.floor(Math.random()*available.length)];
+
+melody.push(randomNote);
+  }
+
+
+  createBoxes(len);
+  playMelody();
+}
+
+function playMelody(){
+  melody.forEach((n,i)=>{
+    setTimeout(()=>play(freq(n)),i*650);
+  });
+}
+
+function createBoxes(n){
+  const boxDiv=document.getElementById("boxes");
+  boxDiv.innerHTML="";
+  for(let i=0;i<n;i++){
+    let b=document.createElement("div");
+    b.className="box";
+    boxDiv.appendChild(b);
+  }
+}
+
+function add(l){
+  if(selectingKey){
+    currentKey = labels.indexOf(l);
+
+    if(droneOsc){
+      droneOsc.frequency.setValueAtTime(getDroneFreq(), audioCtx.currentTime);
+    }
+
+    selectingKey = false;
+    exitKeyMode();
+    return;
+  }
+
+  if(instrumentMode){
+    play(freq(labels.indexOf(l)));
+    return;
+  }
+
+  if(user.length>=melody.length) return;
+
+  user.push(l);
+  updateBoxes();
+
+  if(user.length===melody.length){
+    check();
+  }
+}
+
+function updateBoxes(){
+  let boxes=document.querySelectorAll(".box");
+  boxes.forEach((b,i)=>b.innerText=user[i]||"");
+}
+
+function backspace(){
+  user.pop();
+  updateBoxes();
+}
+
+function check(){
+  let correct = melody.map(i => labels[i]);
+  let boxes = document.querySelectorAll(".box");
+
+  let isCorrect = JSON.stringify(correct) === JSON.stringify(user);
+
+  // vis farve
+  if(isCorrect){
+    boxes.forEach(b => b.classList.add("correct"));
+  } else {
+    boxes.forEach(b => b.classList.add("wrong"));
+  }
+
+  setTimeout(() => {
+    boxes.forEach(b => b.classList.remove("correct","wrong"));
+
+    if(isCorrect){
+      // autoskip
+      if(document.getElementById("autoSkip").checked){
+        newMelody();
+      }
+    } else {
+      // 🔥 clear on wrong
+      user = [];
+      updateBoxes();
+    }
+
+  }, 600);
+}
+
+function replay(){playMelody();}
+
+function reveal(){
+  document.getElementById("status").innerText=
+    melody.map(i=>labels[i]).join("    ");
+}
+
+function toggleSettings(){
+  let p=document.getElementById("settingsPanel");
+  p.style.display=(p.style.display==="block")?"none":"block";
+}
+
+document.getElementById("len").oninput=function(){
+  document.getElementById("lenVal").innerText=this.value;
+};
+
+const grid=document.getElementById("grid");
+labels.forEach((l,i)=>{
+  let b=document.createElement("div");
+  b.className="note";
+  if(i % 2 === 1) b.classList.add("alt");
+  b.innerText=l;
+
+let noteHoldTimer;
+
+b.onmousedown = b.ontouchstart = () => {
+  noteHoldTimer = setTimeout(() => {
+    let index = labels.indexOf(l);
+    activeNotes[index] = !activeNotes[index];
+
+    b.style.opacity = activeNotes[index] ? "1" : "0.25";
+  }, 500);
+};
+
+b.onmouseup = b.ontouchend = () => {
+  clearTimeout(noteHoldTimer);
+
+  if(!selectingKey){
+    add(l);
+  }
+};
+  grid.appendChild(b);
+});
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js");
+}
+</script>
+
+</body>
+</html>
